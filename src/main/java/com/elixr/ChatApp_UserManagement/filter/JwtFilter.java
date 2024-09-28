@@ -6,6 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.Getter;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,7 +24,9 @@ import java.util.Collections;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final WebClient webClient;
+    @Getter
     private String currentUserName;
+    @Getter
     private String currentToken;
 
     public JwtFilter(WebClient.Builder webClientBuilder) {
@@ -56,6 +60,7 @@ public class JwtFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(userName, null, Collections.emptyList());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     currentUserName = userName;
+                    MDC.put("user", currentUserName);
                 }
             }
             filterChain.doFilter(request, response);
@@ -70,14 +75,6 @@ public class JwtFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
         return null;
-    }
-
-    public String getUserName() {
-        return currentUserName;
-    }
-
-    public String getToken() {
-        return currentToken;
     }
 }
 

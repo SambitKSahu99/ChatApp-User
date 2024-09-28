@@ -1,5 +1,6 @@
 package com.elixr.ChatApp_UserManagement.service;
 
+import com.elixr.ChatApp_UserManagement.contants.LogInfoConstants;
 import com.elixr.ChatApp_UserManagement.contants.MessagesConstants;
 import com.elixr.ChatApp_UserManagement.contants.UrlConstants;
 import com.elixr.ChatApp_UserManagement.contants.UserConstants;
@@ -12,7 +13,7 @@ import com.elixr.ChatApp_UserManagement.model.UserDetailsModel;
 import com.elixr.ChatApp_UserManagement.repository.UserManagementRepository;
 import com.elixr.ChatApp_UserManagement.util.PasswordUtil;
 import com.elixr.ChatApp_UserManagement.validation.UserValidation;
-import org.springframework.security.core.userdetails.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserManagementService {
 
@@ -43,6 +45,7 @@ public class UserManagementService {
         String password = userValidation.isValidPassword(userDetailsDto.getPassword());
         if (userManagementRepository
                 .existsByUserName(userName)) {
+            log.info(LogInfoConstants.DB_CALL_FOR_CHECKING_USERNAME);
             throw new UserNameConflictException(MessagesConstants.USER_NAME_ALREADY_TAKEN);
         }
         UserDetailsModel userDetailsModel = UserDetailsModel.builder()
@@ -51,17 +54,20 @@ public class UserManagementService {
                 .password(passwordUtil.hashPassword(password))
                 .build();
         userManagementRepository.save(userDetailsModel);
+        log.info(LogInfoConstants.SAVING_USER_INFO,userDetailsModel.getUserName());
         return userDetailsModel.getUserName();
     }
 
     public boolean verifyUser(String userName){
         Optional<UserDetailsModel> user = userManagementRepository.findByUserName(userName);
+        log.info(LogInfoConstants.DB_CALL_FOR_CHECKING_USERNAME);
         return user.isPresent();
     }
 
     public List<String> getAllUsers() throws UserNotFoundException {
         List<UserDetailsModel> allUsers = userManagementRepository.findAll();
-        String currentUser = jwtFilter.getUserName();
+        log.info(LogInfoConstants.GETTING_ALL_USERS_LIST);
+        String currentUser = jwtFilter.getCurrentUserName();
         if (allUsers.isEmpty()) {
             throw new UserNotFoundException(MessagesConstants.NO_USERS_FOUND);
         }
@@ -72,7 +78,7 @@ public class UserManagementService {
     }
 
     public UserDetailsDto updateUser(UserDetailsDto userDetailsDto) throws UserNameConflictException {
-        String currentUser = jwtFilter.getUserName();
+        String currentUser = jwtFilter.getCurrentUserName();
         UserDetailsModel user = UserDetailsModel.builder()
                 .id(userManagementRepository.findByUserName(currentUser).get().getId())
                 .userName(userDetailsDto.getUserName())
@@ -80,6 +86,7 @@ public class UserManagementService {
                 .build();
         updateMessages(currentUser,userDetailsDto.getUserName());
         UserDetailsModel userDetailsModel = userManagementRepository.save(user);
+        log.info(LogInfoConstants.CALLING_DB_TO_UPDATE,userDetailsModel.getUserName());
         return UserDetailsDto.builder()
                 .userName(userDetailsModel.getUserName())
                 .build();
@@ -87,8 +94,9 @@ public class UserManagementService {
     }
 
     public void deleteUser() throws UserException {
-        String currentUser = jwtFilter.getUserName();
+        String currentUser = jwtFilter.getCurrentUserName();
         Optional<UserDetailsModel> user = userManagementRepository.findByUserName(currentUser);
+        log.info(LogInfoConstants.DB_CALL_FOR_CHECKING_USERNAME+" for deleting");
         user.ifPresent(userDetailsModel -> userManagementRepository.deleteById(userDetailsModel.getId()));
         if(user.isEmpty()){
             throw new UserException(MessagesConstants.ERROR_OCCURRED);
@@ -96,7 +104,8 @@ public class UserManagementService {
     }
 
     private void updateMessages(String oldName,String newName){
-        String token = jwtFilter.getToken();
+        String token = jwtFilter.getCurrentToken();
+        log.info(LogInfoConstants.CALL_TO_MESSAGE_SERVICE_TO_UPDATE_MESSAGES);
         webClient.put()
                 .uri(uriBuilder -> uriBuilder
                         .path(UrlConstants.MESSAGE_ENDPOINT)
