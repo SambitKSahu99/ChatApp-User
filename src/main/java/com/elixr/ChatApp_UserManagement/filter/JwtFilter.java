@@ -1,5 +1,6 @@
 package com.elixr.ChatApp_UserManagement.filter;
 
+import com.elixr.ChatApp_UserManagement.contants.LogInfoConstants;
 import com.elixr.ChatApp_UserManagement.contants.UrlConstants;
 import com.elixr.ChatApp_UserManagement.contants.UserConstants;
 import jakarta.servlet.FilterChain;
@@ -7,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +22,7 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.util.Collections;
 
+@Slf4j
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
@@ -42,6 +45,7 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = extractToken(request);
             currentToken = token;
             if (StringUtils.hasText(token)) {
+                log.info(LogInfoConstants.CALLING_AUTH_SERVICE);
                 String userName = webClient.post()
                         .uri(UrlConstants.VERIFY_TOKEN_ENDPOINT)
                         .header(UserConstants.AUTHORIZATION_HEADER

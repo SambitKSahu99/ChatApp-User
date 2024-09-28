@@ -11,4 +11,5 @@ public class LogInfoConstants {
     public static final String RETRIEVED_ALL_USER = "Sending all users list";
     public static final String UPDATED_USER = "Updated username to {}";
     public static final String DELETED_USER = "Deleted user";
+    public static final String CALLING_AUTH_SERVICE = "Calling auth service to verify token";
 }
