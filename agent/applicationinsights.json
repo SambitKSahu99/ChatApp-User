@@ -1,0 +1,6 @@
+{
+  "connectionString": "InstrumentationKey=aa194d36-d32c-4ffe-a931-1a9bc68a4be0;IngestionEndpoint=https://southindia-0.in.applicationinsights.azure.com/;LiveEndpoint=https://southindia.livediagnostics.monitor.azure.com/;ApplicationId=1c0c0a15-701c-4bea-9aea-ec1472f2afbf",
+  "role": {
+    "name": "ChatApp UserManagement-Service"
+  }
+}
