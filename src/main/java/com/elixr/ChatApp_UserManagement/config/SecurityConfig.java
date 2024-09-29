@@ -48,7 +48,7 @@ public class SecurityConfig {
     public UrlBasedCorsConfigurationSource corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(UrlConstants.UI_URL)); // Frontend URL
+        config.setAllowedOrigins(List.of(UrlConstants.UI_URL,UrlConstants.AUTH_SERVICE_URL,UrlConstants.MESSAGE_SERVICE_URL)); // Frontend URL
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP methods
         config.setAllowedHeaders(List.of(UserConstants.ALLOWED_HEADERS)); // Allowed headers
         config.setAllowCredentials(true);
