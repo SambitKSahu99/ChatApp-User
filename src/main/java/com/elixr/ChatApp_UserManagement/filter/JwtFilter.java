@@ -43,13 +43,14 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String token = extractToken(request);
-            currentToken = token;
+            assert token != null;
+            currentToken = token.substring(7);
             if (StringUtils.hasText(token)) {
                 log.info(LogInfoConstants.CALLING_AUTH_SERVICE);
                 String userName = webClient.post()
                         .uri(UrlConstants.VERIFY_TOKEN_ENDPOINT)
                         .header(UserConstants.AUTHORIZATION_HEADER
-                                , UserConstants.BEARER + token)
+                                , token)
                         .retrieve()
                         .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                                 clientResponse.bodyToMono(String.class)
@@ -63,20 +64,22 @@ public class JwtFilter extends OncePerRequestFilter {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(userName, null, Collections.emptyList());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.info(LogInfoConstants.TOKEN_VERIFIED);
                     currentUserName = userName;
                     MDC.put("user", currentUserName);
                 }
             }
-            filterChain.doFilter(request, response);
         } catch (RuntimeException exception) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
+        filterChain.doFilter(request, response);
     }
 
     private String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(UserConstants.AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(UserConstants.BEARER)) {
-            return bearerToken.substring(7);
+            return bearerToken;
         }
         return null;
     }

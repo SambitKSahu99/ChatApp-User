@@ -6,8 +6,6 @@ public class UserConstants {
     public static final String BEARER = "Bearer ";
     public static final String CLIENT_ERROR = "Client Error: ";
     public static final String EMPTY_STRING = "";
-    public static final String EXPIRED = "expired";
-    public static final String INVALID = "invalid";
     public static final String NEW_NAME = "newName";
     public static final String OLD_NAME = "oldName";
     public static final String REGISTERED_CORS_PATTERN = "/**";

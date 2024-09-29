@@ -7,26 +7,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
         Response customErrorResponse = new Response();
         ObjectMapper objectMapper = new ObjectMapper();
-        if (authException.getMessage().contains(UserConstants.EXPIRED) || authException.getMessage().contains(UserConstants.INVALID)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            customErrorResponse.setResponse(MessagesConstants.INVALID_TOKEN);
-            response.getWriter().write(objectMapper.writeValueAsString(customErrorResponse));
+        String errorMessage = authException.getMessage();
+        if (errorMessage.contains(UserConstants.CLIENT_ERROR)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            customErrorResponse.setResponse(UserConstants.CLIENT_ERROR);
+            log.error(UserConstants.CLIENT_ERROR,authException);
+        } else if (errorMessage.contains(UserConstants.SERVER_ERROR)) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            customErrorResponse.setResponse(UserConstants.SERVER_ERROR);
+            log.error(UserConstants.SERVER_ERROR,authException);
         } else {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             customErrorResponse.setResponse(MessagesConstants.ACCESS_DENIED);
-            response.getWriter().write(objectMapper.writeValueAsString(customErrorResponse));
+            log.error(MessagesConstants.ERROR_OCCURRED,authException);
         }
+        response.getWriter().write(objectMapper.writeValueAsString(customErrorResponse));
+
     }
 }
