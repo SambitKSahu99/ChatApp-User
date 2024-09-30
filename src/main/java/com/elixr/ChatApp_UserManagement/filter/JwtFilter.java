@@ -41,6 +41,11 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+        String requestPath = request.getServletPath();
+        if (UrlConstants.REGISTER_USER_API_ENDPOINT.equals(requestPath)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         try {
             String token = extractToken(request);
             assert token != null;
