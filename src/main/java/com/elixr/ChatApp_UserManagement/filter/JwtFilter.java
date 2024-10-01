@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,9 +32,11 @@ public class JwtFilter extends OncePerRequestFilter {
     private String currentUserName;
     @Getter
     private String currentToken;
+    @Value(UserConstants.AUTH_SERVICE_URL_VALUE)
+    private String authServiceUrl;
 
     public JwtFilter(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl(UrlConstants.AUTH_SERVICE_URL).build();
+        this.webClient = webClientBuilder.build();
     }
 
     @Override
@@ -48,14 +51,12 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         try {
             String token = extractToken(request);
-            assert token != null;
-            currentToken = token.substring(7);
+            currentToken = token;
             if (StringUtils.hasText(token)) {
-                log.info(LogInfoConstants.CALLING_AUTH_SERVICE);
                 String userName = webClient.post()
-                        .uri(UrlConstants.VERIFY_TOKEN_ENDPOINT)
+                        .uri(authServiceUrl+UrlConstants.VERIFY_TOKEN_ENDPOINT)
                         .header(UserConstants.AUTHORIZATION_HEADER
-                                , token)
+                                ,UserConstants.BEARER+token)
                         .retrieve()
                         .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
                                 clientResponse.bodyToMono(String.class)
@@ -84,7 +85,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(UserConstants.AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(UserConstants.BEARER)) {
-            return bearerToken;
+            return bearerToken.substring(7);
         }
         return null;
     }

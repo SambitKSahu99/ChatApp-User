@@ -14,6 +14,7 @@ import com.elixr.ChatApp_UserManagement.repository.UserManagementRepository;
 import com.elixr.ChatApp_UserManagement.util.PasswordUtil;
 import com.elixr.ChatApp_UserManagement.validation.UserValidation;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -31,13 +32,15 @@ public class UserManagementService {
     private final UserValidation userValidation;
     private final JwtFilter jwtFilter;
     private final WebClient webClient;
+    @Value(UserConstants.MESSAGE_SERVICE_URL_VALUE)
+    private String messageServiceBaseUrl;
 
     public UserManagementService(UserManagementRepository userManagementRepository, PasswordUtil passwordUtil, UserValidation userValidation, JwtFilter jwtFilter, WebClient.Builder webClient) {
         this.userManagementRepository = userManagementRepository;
         this.passwordUtil = passwordUtil;
         this.userValidation = userValidation;
         this.jwtFilter = jwtFilter;
-        this.webClient = webClient.baseUrl(UrlConstants.MESSAGE_SERVICE_URL).build();
+        this.webClient = webClient.build();
     }
 
     public String saveUser(UserDetailsDto userDetailsDto) throws UserException, UserNameConflictException {
@@ -108,7 +111,7 @@ public class UserManagementService {
         log.info(LogInfoConstants.CALL_TO_MESSAGE_SERVICE_TO_UPDATE_MESSAGES);
         webClient.put()
                 .uri(uriBuilder -> uriBuilder
-                        .path(UrlConstants.MESSAGE_ENDPOINT)
+                        .path(messageServiceBaseUrl+UrlConstants.MESSAGE_ENDPOINT)
                         .queryParam(UserConstants.OLD_NAME, oldName)
                         .queryParam(UserConstants.NEW_NAME, newName)
                         .build())
