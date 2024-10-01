@@ -9,7 +9,7 @@ public class MessagesConstants {
     public static final String NO_USERS_FOUND = "No users found";
     public static final String PASSWORD_SAME = "Old and new password can't be same";
     public static final String USERNAME_SAME = "Old UserName and new UserName can't be same";
-    public static final String ERROR_OCCURRED = "Some error occurred ";
+    public static final String ERROR_OCCURRED = "Not able to call auth service";
     public static final String DELETED_SUCCESSFUL = "Deleted successfully";
     public static final String INVALID_TOKEN = "Invalid Token";
     public static final String ACCESS_DENIED = "Please login";
