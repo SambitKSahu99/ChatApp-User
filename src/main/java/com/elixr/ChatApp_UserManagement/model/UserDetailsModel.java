@@ -20,5 +20,7 @@ public class UserDetailsModel {
     @Id
     private UUID id;
     private String userName;
+    private String firstName;
+    private String lastName;
     private String password;
 }

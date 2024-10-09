@@ -15,9 +15,11 @@ import com.elixr.ChatApp_UserManagement.util.PasswordUtil;
 import com.elixr.ChatApp_UserManagement.validation.UserValidation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,30 +33,29 @@ public class UserManagementService {
     private final PasswordUtil passwordUtil;
     private final UserValidation userValidation;
     private final JwtFilter jwtFilter;
-    private final WebClient webClient;
     @Value(UserConstants.MESSAGE_SERVICE_URL_VALUE)
     private String messageServiceBaseUrl;
 
-    public UserManagementService(UserManagementRepository userManagementRepository, PasswordUtil passwordUtil, UserValidation userValidation, JwtFilter jwtFilter, WebClient.Builder webClient) {
+    public UserManagementService(UserManagementRepository userManagementRepository, PasswordUtil passwordUtil, UserValidation userValidation, JwtFilter jwtFilter) {
         this.userManagementRepository = userManagementRepository;
         this.passwordUtil = passwordUtil;
         this.userValidation = userValidation;
         this.jwtFilter = jwtFilter;
-        this.webClient = webClient.build();
     }
 
     public String saveUser(UserDetailsDto userDetailsDto) throws UserException, UserNameConflictException {
-        String userName = userValidation.isValidUserName(userDetailsDto.getUserName());
-        String password = userValidation.isValidPassword(userDetailsDto.getPassword());
+        userValidation.isValidDto(userDetailsDto);
         if (userManagementRepository
-                .existsByUserName(userName)) {
+                .existsByUserName(userDetailsDto.getUserName())) {
             log.info(LogInfoConstants.DB_CALL_FOR_CHECKING_USERNAME);
             throw new UserNameConflictException(MessagesConstants.USER_NAME_ALREADY_TAKEN);
         }
         UserDetailsModel userDetailsModel = UserDetailsModel.builder()
                 .id(UUID.randomUUID())
-                .userName(userName)
-                .password(passwordUtil.hashPassword(password))
+                .firstName(userDetailsDto.getFirstName())
+                .lastName(userDetailsDto.getLastName())
+                .userName(userDetailsDto.getUserName())
+                .password(passwordUtil.hashPassword(userDetailsDto.getPassword()))
                 .build();
         userManagementRepository.save(userDetailsModel);
         log.info(LogInfoConstants.SAVING_USER_INFO,userDetailsModel.getUserName());
@@ -67,6 +68,21 @@ public class UserManagementService {
         return user.isPresent();
     }
 
+    public UserDetailsDto getCurrentUserDetails(String currentUserName) throws UserException {
+        log.info(LogInfoConstants.RETRIEVING_CURRENT_USER,currentUserName);
+        Optional<UserDetailsModel> currentUser = userManagementRepository.findByUserName(currentUserName);
+        if(currentUser.isEmpty()){
+            log.warn(LogInfoConstants.NO_USER_FOUND);
+            throw new UserException(MessagesConstants.USER_NOT_FOUND);
+        }
+        UserDetailsModel user = currentUser.get();
+        return UserDetailsDto.builder()
+                .userName(user.getUserName())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
+    }
+
     public List<String> getAllUsers() throws UserNotFoundException {
         List<UserDetailsModel> allUsers = userManagementRepository.findAll();
         log.info(LogInfoConstants.GETTING_ALL_USERS_LIST);
@@ -75,25 +91,31 @@ public class UserManagementService {
             throw new UserNotFoundException(MessagesConstants.NO_USERS_FOUND);
         }
         return allUsers.stream()
-                .map(UserDetailsModel::getUserName) // Extract the userName from each UserDetailsModel
-                .filter(name -> !name.equals(currentUser)) // Filter out the userName you want to exclude
+                .map(UserDetailsModel::getUserName)
+                .filter(name -> !name.equals(currentUser))
                 .collect(Collectors.toList());
     }
 
-    public UserDetailsDto updateUser(UserDetailsDto userDetailsDto) throws UserNameConflictException {
-        String currentUser = jwtFilter.getCurrentUserName();
-        UserDetailsModel user = UserDetailsModel.builder()
-                .id(userManagementRepository.findByUserName(currentUser).get().getId())
-                .userName(userDetailsDto.getUserName())
-                .password(passwordUtil.hashPassword(userDetailsDto.getPassword()))
-                .build();
-        updateMessages(currentUser,userDetailsDto.getUserName());
-        UserDetailsModel userDetailsModel = userManagementRepository.save(user);
-        log.info(LogInfoConstants.CALLING_DB_TO_UPDATE,userDetailsModel.getUserName());
+    public UserDetailsDto updateUser(UserDetailsDto userDetailsDto) {
+        String currentUserName = jwtFilter.getCurrentUserName();
+        Optional<UserDetailsModel> currentUserOptional = userManagementRepository.findByUserName(currentUserName);
+        UserDetailsModel currentUser = null;
+        if(currentUserOptional.isPresent()){
+             currentUser = currentUserOptional.get();
+        }
+        UserDetailsModel user = userManagementRepository.save(UserDetailsModel.builder()
+                .id(currentUser.getId())
+                .userName(currentUser.getUserName())
+                .firstName(userDetailsDto.getFirstName())
+                .lastName(userDetailsDto.getLastName())
+                        .password(currentUser.getPassword())
+                .build());
+        log.info(LogInfoConstants.CALLING_DB_TO_UPDATE,user.getUserName());
         return UserDetailsDto.builder()
-                .userName(userDetailsModel.getUserName())
+                .userName(user.getUserName())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .build();
-
     }
 
     public void deleteUser() throws UserException {
@@ -104,20 +126,5 @@ public class UserManagementService {
         if(user.isEmpty()){
             throw new UserException(MessagesConstants.ERROR_OCCURRED);
         }
-    }
-
-    private void updateMessages(String oldName,String newName){
-        String token = jwtFilter.getCurrentToken();
-        log.info(LogInfoConstants.CALL_TO_MESSAGE_SERVICE_TO_UPDATE_MESSAGES);
-        webClient.put()
-                .uri(uriBuilder -> uriBuilder
-                        .path(messageServiceBaseUrl+UrlConstants.MESSAGE_ENDPOINT)
-                        .queryParam(UserConstants.OLD_NAME, oldName)
-                        .queryParam(UserConstants.NEW_NAME, newName)
-                        .build())
-                .header(UserConstants.AUTHORIZATION_HEADER,UserConstants.BEARER+token)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
     }
 }

@@ -57,11 +57,18 @@ public class UserManagementController {
         return new ResponseEntity<>(response,HttpStatus.OK);
     }
 
+    @GetMapping(UrlConstants.CURRENT_USER_END_POINT)
+    public ResponseEntity<UserDetailsDto> getCurrentUser(@PathVariable String userName) throws UserException {
+        UserDetailsDto currentUser = userManagementService.getCurrentUserDetails(userName);
+        log.info(LogInfoConstants.SENDING_USER_DETAILS,currentUser.getUserName());
+        return new ResponseEntity<>(currentUser,HttpStatus.OK);
+    }
+
     @PostMapping(UrlConstants.UPDATE_USER_END_POINT)
-    public ResponseEntity<Response> updateUser(@RequestBody UserDetailsDto userDetailsDto) throws UserNameConflictException {
+    public ResponseEntity<UserDetailsDto> updateUser(@RequestBody UserDetailsDto userDetailsDto) throws UserNameConflictException {
         UserDetailsDto responseDto = userManagementService.updateUser(userDetailsDto);
         log.info(LogInfoConstants.UPDATED_USER,responseDto.getUserName());
-        return new ResponseEntity<>(new Response(responseDto.getUserName()),HttpStatus.OK);
+        return new ResponseEntity<>(responseDto,HttpStatus.OK);
     }
 
     @DeleteMapping(UrlConstants.USER_END_POINT)
