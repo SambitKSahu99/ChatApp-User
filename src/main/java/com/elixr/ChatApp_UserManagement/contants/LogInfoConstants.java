@@ -10,7 +10,6 @@ public class LogInfoConstants {
     public static final String RETRIEVED_ALL_USER = "Sending all users list";
     public static final String UPDATED_USER = "Updated {} details";
     public static final String DELETED_USER = "Deleted user";
-    public static final String CALLING_AUTH_SERVICE = "Calling auth service to verify token";
     public static final String TOKEN_VERIFIED = "Token verification successful";
     public static final String RETRIEVING_CURRENT_USER = "Retrieving {} details from database";
     public static final String NO_USER_FOUND = "No user details found";
