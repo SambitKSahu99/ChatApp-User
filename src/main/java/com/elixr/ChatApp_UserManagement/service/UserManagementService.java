@@ -2,7 +2,6 @@ package com.elixr.ChatApp_UserManagement.service;
 
 import com.elixr.ChatApp_UserManagement.contants.LogInfoConstants;
 import com.elixr.ChatApp_UserManagement.contants.MessagesConstants;
-import com.elixr.ChatApp_UserManagement.contants.UrlConstants;
 import com.elixr.ChatApp_UserManagement.contants.UserConstants;
 import com.elixr.ChatApp_UserManagement.dto.UserDetailsDto;
 import com.elixr.ChatApp_UserManagement.exceptionhandling.UserException;
@@ -15,11 +14,8 @@ import com.elixr.ChatApp_UserManagement.util.PasswordUtil;
 import com.elixr.ChatApp_UserManagement.validation.UserValidation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -86,7 +82,7 @@ public class UserManagementService {
     public List<String> getAllUsers() throws UserNotFoundException {
         List<UserDetailsModel> allUsers = userManagementRepository.findAll();
         log.info(LogInfoConstants.GETTING_ALL_USERS_LIST);
-        String currentUser = jwtFilter.getCurrentUserName();
+        String currentUser = jwtFilter.getCurrentUser();
         if (allUsers.isEmpty()) {
             throw new UserNotFoundException(MessagesConstants.NO_USERS_FOUND);
         }
@@ -97,7 +93,7 @@ public class UserManagementService {
     }
 
     public UserDetailsDto updateUser(UserDetailsDto userDetailsDto) {
-        String currentUserName = jwtFilter.getCurrentUserName();
+        String currentUserName = jwtFilter.getCurrentUser();
         Optional<UserDetailsModel> currentUserOptional = userManagementRepository.findByUserName(currentUserName);
         UserDetailsModel currentUser = null;
         if(currentUserOptional.isPresent()){
@@ -119,7 +115,7 @@ public class UserManagementService {
     }
 
     public void deleteUser() throws UserException {
-        String currentUser = jwtFilter.getCurrentUserName();
+        String currentUser = jwtFilter.getCurrentUser();
         Optional<UserDetailsModel> user = userManagementRepository.findByUserName(currentUser);
         log.info(LogInfoConstants.DB_CALL_FOR_CHECKING_USERNAME+" for deleting");
         user.ifPresent(userDetailsModel -> userManagementRepository.deleteById(userDetailsModel.getId()));

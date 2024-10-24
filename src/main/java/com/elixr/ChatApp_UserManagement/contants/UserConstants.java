@@ -11,6 +11,8 @@ public class UserConstants {
     public static final String REGISTERED_CORS_PATTERN = "/**";
     public static final String SERVER_ERROR = "Server Error: ";
     public static final String USER_COLLECTION_NAME = "users";
+    private static final String KEY = "secret.key";
+    public static final String SECRET_KEY = "${"+KEY+"}";
     private static final String UI_BASEURL = "ui.baseurl";
     public static final String UI_URL_VALUE = "${"+UI_BASEURL+"}";
     private static final String AUTH_BASEURL = "auth.baseurl";
